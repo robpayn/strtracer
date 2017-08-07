@@ -1,3 +1,6 @@
+#' Create a new hyperbolic analysis object based on an experiment
+#' 
+#' @export
 HyperbolicAnalysis <- function(
    experiment, 
    metricsLength
@@ -27,6 +30,9 @@ HyperbolicAnalysis <- function(
    return(analysis);   
 }
 
+#' Create a new TASCC field experiment hyperbolic analysis object based on an experiment
+#' 
+#' @export
 HyperbolicAnalysisTASCCField <- function(experiment)
 {
    length <- length(experiment$conserveSolute$Time);
@@ -65,6 +71,9 @@ HyperbolicAnalysisTASCCField <- function(experiment)
    return(analysis);
 }
 
+#' Create a new MCR hyperbolic analysis object based on an experiment
+#' 
+#' @export
 HyperbolicAnalysisMultilevel <- function(
    simulation,
    analysisWindow,
@@ -108,6 +117,9 @@ HyperbolicAnalysisMultilevel <- function(
    return(analysis);
 }
 
+#' Create a new instantaneous release experiment (slug) analysis object based on an experiment
+#' 
+#' @export
 HyperbolicAnalysisSlug <- function(
    simulation,
    analysisWindow,
@@ -150,6 +162,9 @@ HyperbolicAnalysisSlug <- function(
    return(analysis);
 }
 
+#' Create a new TASCC hyperbolic analysis object based on an experiment
+#' 
+#' @export
 HyperbolicAnalysisTASCC <- function(
    simulation,
    analysisWindow,
@@ -178,6 +193,9 @@ HyperbolicAnalysisTASCC <- function(
    return(analysis);
 }
 
+#' Create a new Lagrangian TASCC hyperbolic analysis object based on an experiment
+#' 
+#' @export
 HyperbolicAnalysisLagrangeTASCC <- function(
    simulation,
    analysisWindow,
@@ -204,11 +222,17 @@ HyperbolicAnalysisLagrangeTASCC <- function(
    return(analysis);
 }
 
+#' Calculate the metrics used for the analysis
+#' 
+#' @export
 calcMetrics <- function(analysis, ...)
 {
    UseMethod("calcMetrics", analysis);
 }
 
+#' Calculate the metrics used for a hyperbolic analysis
+#' 
+#' @export
 calcMetrics.HyperbolicAnalysis <- function(analysis)
 {
    analysis$metrics$cefftot <- analysis$experiment$activeBkg + analysis$metrics$ceffinject;
@@ -217,11 +241,17 @@ calcMetrics.HyperbolicAnalysis <- function(analysis)
    analysis$metrics$u <- analysis$metrics$vf * analysis$metrics$ceffinject;
 }
 
+#' Run the analysis
+#' 
+#' @export
 run <- function(analysis, ...)
 {
    UseMethod("run", analysis);
 }
 
+#' Run the hyperbolic analysis
+#' 
+#' @export
 run.HyperbolicAnalysis <- function(
    analysis,
    fixedParameters = list(umaxp = NULL, halfsatp = NULL),
@@ -322,6 +352,9 @@ run.HyperbolicAnalysis <- function(
    );
 }
 
+#' Plot the results of the analysis
+#' 
+#' @export
 plot.HyperbolicAnalysis <- function(
    analysis,
    device = "default",
@@ -356,11 +389,17 @@ plot.HyperbolicAnalysis <- function(
       );
 }
 
+#' Plot the results of the analysis based on uptake vs. concentration
+#' 
+#' @export
 plotUptakeEstimate <- function(analysis, ...)
 {
    UseMethod("plotUptakeEstimate", analysis);
 }
 
+#' Plot the results of the hyperbolic analysis based on uptake vs. concentration
+#' 
+#' @export
 plotUptakeEstimate.HyperbolicAnalysis <- function(
    analysis, 
    device = "default",
@@ -432,11 +471,17 @@ plotUptakeEstimate.HyperbolicAnalysis <- function(
    }
 }
 
+#' Plot the results of the analysis based on vf vs. concentration
+#' 
+#' @export
 plotVfEstimate <- function(analysis, ...)
 {
    UseMethod("plotVfEstimate", analysis);
 }
 
+#' Plot the results of the hyperbolic analysis based on vf vs. concentration
+#' 
+#' @export
 plotVfEstimate.HyperbolicAnalysis <- function(
    analysis, 
    device = "default",
