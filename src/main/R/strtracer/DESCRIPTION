@@ -1,0 +1,15 @@
+Package: strtracer
+Version: 0.1
+Date: 2017-08-04
+Title: Stream Tracer Package
+Author: Rob Payn
+Maintainer: Rob Payn <rpayn@montana.edu>
+Depends:
+    R (>= 1.8.0),
+    XML
+Suggests:
+Description: NA
+License: NA
+URL: NA
+BugReports: NA
+RoxygenNote: 5.0.1
