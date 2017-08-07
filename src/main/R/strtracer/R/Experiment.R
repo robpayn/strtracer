@@ -127,6 +127,9 @@ plotActive <- function(experiment, ...)
    UseMethod("plotActive", experiment);
 }
 
+#' Plot the active tracer breakthrough curve for a tracer experiment
+#' 
+#' @export
 plotActive.Experiment <- function(
    experiment,
    columns = 3:length(experiment$conserveSolute),
