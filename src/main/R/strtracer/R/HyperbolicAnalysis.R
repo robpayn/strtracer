@@ -423,6 +423,8 @@ plotUptakeEstimate.HyperbolicAnalysis <- function(
       ),
    xlab = "Concentration",
    ylab = "Uptake",
+   col = "black",
+   inferredModelCol = "black",
    actualModel = numeric(length = 0),
    actualModelCol = "black",
    ...
@@ -439,7 +441,7 @@ plotUptakeEstimate.HyperbolicAnalysis <- function(
       x = analysis$metrics$cefftot * xfactor, 
       y = (analysis$uEstimates$uamb + analysis$metrics$u) * yfactor,
       pch = 16,
-      col = "red"
+      col = col
       );
    xvals <- seq(
       from = 0, 
@@ -452,7 +454,8 @@ plotUptakeEstimate.HyperbolicAnalysis <- function(
          umax = analysis$uEstimates$umax, 
          halfsat = analysis$uEstimates$halfsat, 
          conc = xvals
-         ) * yfactor
+         ) * yfactor,
+      col = inferredModelCol
       );
    if (length(actualModel) == 2)
    {
@@ -507,6 +510,8 @@ plotVfEstimate.HyperbolicAnalysis <- function(
    ylab = bquote(paste(
       v[f]^-1
       )),
+   col = "black",
+   inferredModelCol = "black",
    actualModel = numeric(length = 0),
    actualModelCol = "black",
    ...
@@ -523,7 +528,7 @@ plotVfEstimate.HyperbolicAnalysis <- function(
       x = analysis$metrics$cefftot * xfactor, 
       y = (1 / analysis$metrics$vf) * yfactor,
       pch = 16,
-      col = "red"
+      col = col
       );
    lines(
       x = xlim,
@@ -531,7 +536,8 @@ plotVfEstimate.HyperbolicAnalysis <- function(
          analysis$vfEstimates$intercept,
          analysis$vfEstimates$intercept +
             analysis$vfEstimates$slope * xlim[2]
-         )
+         ),
+      col = inferredModelCol
       );
    if (length(actualModel) == 2)
    {
