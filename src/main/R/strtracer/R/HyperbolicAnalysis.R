@@ -402,9 +402,6 @@ plotUptakeEstimate <- function(analysis, ...)
 #' @export
 plotUptakeEstimate.HyperbolicAnalysis <- function(
    analysis, 
-   device = "default",
-   width = 8,
-   height = 6,   
    xfactor = 1,
    yfactor = 1,
    xlim = c(
@@ -427,16 +424,16 @@ plotUptakeEstimate.HyperbolicAnalysis <- function(
    xlab = "Concentration",
    ylab = "Uptake",
    actualModel = numeric(length = 0),
+   actualModelCol = "black",
    ...
    )
 {
-   createDevice(device, width, height);
-   par(...);
    createBlankPlot(
       xlim = xlim * xfactor, 
       ylim = ylim * yfactor, 
       xlab = xlab, 
-      ylab = ylab
+      ylab = ylab,
+      ...
       );
    points(
       x = analysis$metrics$cefftot * xfactor, 
@@ -466,7 +463,8 @@ plotUptakeEstimate.HyperbolicAnalysis <- function(
             halfsat = actualModel["halfsat"], 
             conc = xvals
             ) * yfactor,
-         lty = "dashed"
+         lty = "dashed",
+         col = actualModelCol
          );
    }
 }
@@ -484,9 +482,6 @@ plotVfEstimate <- function(analysis, ...)
 #' @export
 plotVfEstimate.HyperbolicAnalysis <- function(
    analysis, 
-   device = "default",
-   width = 8,
-   height = 6,   
    xfactor = 1,
    yfactor = 1,
    xlim = c(
@@ -513,16 +508,16 @@ plotVfEstimate.HyperbolicAnalysis <- function(
       v[f]^-1
       )),
    actualModel = numeric(length = 0),
+   actualModelCol = "black",
    ...
    )
 {
-   createDevice(device, width, height);
-   par(...);
    createBlankPlot(
       xlim = xlim * xfactor, 
       ylim = ylim * yfactor, 
       xlab = xlab, 
-      ylab = ylab
+      ylab = ylab,
+      ...
       );
    points(
       x = analysis$metrics$cefftot * xfactor, 
@@ -547,7 +542,8 @@ plotVfEstimate.HyperbolicAnalysis <- function(
             actualModel["vfint"] +
                actualModel["vfslope"] * xlim[2]
             ),
-         lty = "dashed"
+         lty = "dashed",
+         col = actualModelCol
          );
    }
 }
