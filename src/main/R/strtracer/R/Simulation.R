@@ -211,7 +211,8 @@ SimulationLagrange <- function(
    particleDir,
    analysisWindow,
    releaseTime, 
-   pathTimeWindow = analysisWindow[2]
+   pathTimeWindow,
+   pathLocationWindow = NA
    ) 
 {
    simulation <- SimulationSlug(
@@ -222,12 +223,12 @@ SimulationLagrange <- function(
       releaseTime = releaseTime
       );
    
-   times <- seq(
+   simulation$times <- seq(
       from = analysisWindow[1], 
       to = analysisWindow[2], 
       by = simulation$outputTimeStep
       );
-   simulation$paths <- vector("list", length(times));
+   simulation$paths <- vector("list", length(simulation$times));
 
    fileName <- paste(
       particleDir,
@@ -239,10 +240,18 @@ SimulationLagrange <- function(
    pathStartTime <- arrivalTime - pathTimeWindow;
    particleTable <- particleTable[(particleTable$time > pathStartTime),];
    simulation$paths[[1]] <- particleTable;
-   
-   for (metricsCount in 1:length(times)) 
+   if (is.na(pathTimeWindow))
    {
-      metricTime <- times[metricsCount];
+      if (is.na(pathLocationWindow))
+      {
+         stop("Argument pathLocationWindow must be specified if pathTimeWindow is NA.");
+      }
+      pathDistance = simulation$streamLength - pathLocationWindow;
+   }
+   
+   for (metricsCount in 1:length(simulation$times)) 
+   {
+      metricTime <- simulation$times[metricsCount];
       count <- 1;
       continue <- TRUE;
       while(continue) 
@@ -256,10 +265,21 @@ SimulationLagrange <- function(
             read.table(file=fileName, header=TRUE, sep=" ");
          nextArrivalTime <- 
             nextParticleTable[length(nextParticleTable[,1]),]$time;
-         nextPathStartTime <- 
-            nextArrivalTime - pathTimeWindow;
-         nextParticleTable <- 
-            nextParticleTable[(nextParticleTable$time > nextPathStartTime),];
+         if (is.na(pathTimeWindow))
+         {
+            nextPathStartTime <- 
+               nextArrivalTime - 
+                  pathDistance / (simulation$streamLength / (simulation$times[metricsCount] - simulation$releaseTime));
+            nextParticleTable <- 
+               nextParticleTable[(nextParticleTable$time > nextPathStartTime),];
+         }
+         else
+         {
+            nextPathStartTime <- 
+               nextArrivalTime - pathTimeWindow;
+            nextParticleTable <- 
+               nextParticleTable[(nextParticleTable$time > nextPathStartTime),];
+         }
 
          if (nextArrivalTime > metricTime) {
             continue <- FALSE;
