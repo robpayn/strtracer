@@ -63,7 +63,6 @@ setMethod(
 
 setGeneric(
    name = "runAll",
-   where = globalenv(),
    def = function(analysis, ...) { standardGeneric("runAll") }
    );
 
@@ -74,6 +73,7 @@ setMethod(
       
       runSw(analysis, ...);
       runU(analysis, ...);
+      runVf(analysis, ...);
    
       }
    
@@ -82,7 +82,6 @@ setMethod(
 # HyperbolicAnalysis.runSw method ####
 setGeneric(
    name = "runSw",
-   where = globalenv(),
    def = function(analysis) { standardGeneric("runSw") }
    );
 
@@ -121,7 +120,6 @@ setMethod(
 # HyperbolicAnalysis.runU method ####
 setGeneric(
    name = "runU",
-   where = globalenv(),
    def = function(analysis, ...) { standardGeneric("runU") }
    );
 
@@ -189,6 +187,293 @@ setMethod(
       }
    );
 
+# HyperbolicAnalysis.runVf method ####
+setGeneric(
+   name = "runVf",
+   def = function(analysis) { standardGeneric("runVf") }
+   );
+
+setMethod(
+   f = "runVf",
+   signature = "HyperbolicAnalysis",
+   definition = function(analysis) {
+      ineff <- 1 / analysis@metrics$vf;
+      lmresults <- lm(
+         ineff ~ cefftot,
+         data = analysis@metrics
+      );
+      intercept = as.numeric(lmresults$coefficients["(Intercept)"]);
+      slope = as.numeric(lmresults$coefficients["cefftot"]);
+      halfsat = intercept / slope;
+      vfambest = 1 / intercept;
+      analysis@results$vfEstimates = list(
+         intercept = intercept,
+         slope = slope,
+         vfamb = vfambest,
+         umax = (halfsat + analysis@experiment$activeBkg) /
+            intercept,
+         halfsat = halfsat,
+         uamb = vfambest * analysis@experiment$activeBkg
+      );
+      }
+   );
+
+# HyperbolicAnalysis.plot method ####
+
+setGeneric(name = "plot");
+
+setMethod(
+   f = "plot",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      x, 
+      y = NA, 
+      xlab = "Effective Concentration", 
+      xlab.cex = 1,
+      vf.ylab = bquote(paste(v[f])),
+      u.ylab = "U",
+      sw.ylab = bquote(paste(s[w])),
+      actual = TRUE,
+      actual.col = "red",
+      actual.lty = "dashed",
+      ...
+      ) 
+      {
+         par(
+            mar = c(2, 4.5, 1, 1),
+            oma = c(2, 0, 0, 0),
+            mfrow = c(3, 1),
+            ...
+            );
+         plotVf(analysis = x, xlab = "", ylab = vf.ylab);
+         if (actual) {
+            linesVfModel(
+               analysis = x, 
+               intercept = analysis@experiment$vfInterceptActual,
+               slope = analysis@experiment$vfSlopeActual,
+               col = actual.col,
+               lty = actual.lty
+               );
+         }
+         plotU(analysis = x, xlab = "", ylab = u.ylab);
+         if (actual) {
+            linesUModel(
+               analysis = x,
+               umax = analysis@experiment$umax,
+               halfsat = analysis@experiment$halfsat,
+               col = actual.col,
+               lty = actual.lty
+               );
+         }
+         plotSw(analysis = x, xlab = "", ylab = sw.ylab);
+         if (actual) {
+            linesSwModel(
+               analysis = x,
+               intercept = analysis@experiment$swInterceptActual,
+               slope = analysis@experiment$swSlopeActual,
+               col = actual.col,
+               lty = actual.lty
+               );
+         }
+         mtext(
+            xlab,
+            side = 1,
+            outer = TRUE,
+            line = 1,
+            cex = xlab.cex
+            );
+      }
+   );
+
+# HyperbolicAnalysis.plotVf method ####
+
+setGeneric(
+   name = "plotVf",
+   def = function(analysis, ...) { standardGeneric("plotVf") }
+   );
+
+setMethod(
+   f = "plotVf",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      ylim = c(
+         min(analysis@metrics$vf),
+         max(analysis@metrics$vf, 1 / analysis@results$vfEstimates$intercept)
+         ),
+      ylab = bquote(paste(v[f])),
+      ...
+      ) 
+      {
+         plot(
+            x = analysis@metrics$cefftot, 
+            y = analysis@metrics$vf, 
+            ylim = ylim,
+            ylab = ylab,
+            ...
+            );
+         linesVfModel(analysis);
+      }
+   );
+
+# HyperbolicAnalysis.linesVfModel method ####
+
+setGeneric(
+   name = "linesVfModel",
+   def = function(analysis, ...) { standardGeneric("linesVfModel") }
+   );
+
+setMethod(
+   f = "linesVfModel",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      intercept = analysis@results$vfEstimates$intercept,
+      slope = analysis@results$vfEstimates$slope,
+      ...
+      ) 
+      {
+         xvals <- seq(
+            from = 0,
+            to = max(analysis@metrics$cefftot),
+            length.out = 30
+            )
+         ineffModel <- intercept + slope * xvals; 
+         lines(
+            x = xvals,
+            y = 1 / ineffModel,
+            ...
+            );
+      }
+   );
+
+# HyperbolicAnalysis.plotU method ####
+
+setGeneric(
+   name = "plotU",
+   def = function(analysis, ...) { standardGeneric("plotU") }
+   );
+
+setMethod(
+   f = "plotU",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis, 
+      ylim = c(
+         0,
+         max(analysis@results$uEstimates$umax)
+         ),
+      ylab = "U",
+      ...
+      ) 
+      {
+         plot(
+            x = analysis@metrics$cefftot, 
+            y = analysis@results$uEstimates$uamb + analysis@metrics$u, 
+            ylim = ylim,
+            ylab = ylab,
+            ...
+            );
+         linesUModel(analysis);
+      }
+   );
+
+# HyperbolicAnalysis.linesUModel method ####
+
+setGeneric(
+   name = "linesUModel",
+   def = function(analysis, ...) { standardGeneric("linesUModel") }
+   );
+
+setMethod(
+   f = "linesUModel",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      umax = analysis@results$uEstimates$umax,
+      halfsat = analysis@results$uEstimates$halfsat,
+      ...
+      ) 
+      {
+         xvals <- seq(
+            from = 0,
+            to = max(analysis@metrics$cefftot),
+            length.out = 30
+            )
+         lines(
+            x = xvals,
+            y = hyperbolic(
+               umax = umax, 
+               halfsat = halfsat, 
+               conc = xvals
+               ),
+            ...
+            );
+      }
+   );
+
+# HyperbolicAnalysis.plotSw method ####
+
+setGeneric(
+   name = "plotSw",
+   def = function(analysis, ...) { standardGeneric("plotSw") }
+   );
+
+setMethod(
+   f = "plotSw",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis, 
+      ylim = c(
+         min(analysis@metrics$sw, analysis@results$swEstimates$intercept),
+         max(analysis@metrics$sw)
+         ),
+      ylab = bquote(paste(s[w])),
+      ...
+      ) 
+      {
+         plot(
+            analysis@metrics$cefftot, 
+            analysis@metrics$sw,
+            ylim = ylim,
+            ylab = ylab,
+            ...
+            );
+         linesSwModel(analysis);
+      }
+   );
+
+# HyperbolicAnalysis.linesSwModel method ####
+
+setGeneric(
+   name = "linesSwModel",
+   def = function(analysis, ...) { standardGeneric("linesSwModel") }
+   );
+
+setMethod(
+   f = "linesSwModel",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      intercept = analysis@results$swEstimates$intercept,
+      slope = analysis@results$swEstimates$slope,
+      ...
+      ) 
+      {
+         maxceff <- max(analysis@metrics$cefftot);
+         lines(
+            x = c(0, maxceff),
+            y = c(
+               intercept,
+               intercept + slope * maxceff
+               ),
+            ...
+            );
+      }
+   );
+
+# Class HyperbolicAnalysisMCR defintion and constructor ####
+
 HyperbolicAnalysisMCR <- setClass(
    Class = "HyperbolicAnalysisMCR",
    contains = "HyperbolicAnalysis",
@@ -213,12 +498,11 @@ setMethod(
          isSingleColumn <- numColumns == 1;
          .Object@indices <- analysisWindow / simulation$outputTimeStep + 1;
          
-         if (isSingleColumn) {
-            time = analysisWindow;
-         } else {
-            time = analysisWindow * length(conserveColumn)
+         if (!isSingleColumn) {
+            time <- numeric(length = length(analysisWindow) * numColumns)
          }
-         
+         time <- analysisWindow;
+
          if (isSingleColumn)
          {
             conserve <- simulation$conserveSolute[
@@ -263,7 +547,7 @@ setMethod(
                
                ceffinject <- c(
                   ceffinject,
-                  sqrt(activebc[indices] * activenr[prevIndices])
+                  sqrt(activebc[indices] * activebc[prevIndices])
                   );
                
                k <- c(
