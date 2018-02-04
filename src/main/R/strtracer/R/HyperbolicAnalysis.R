@@ -177,8 +177,6 @@ setMethod(
 
 #' Method runU
 #' 
-#' @name runU
-#' @rdname runU-methods
 #' @exportMethod runU
 
 setGeneric(
@@ -186,8 +184,10 @@ setGeneric(
    def = function(analysis, ...) { standardGeneric("runU") }
    );
 
-#' @rdname runU-methods
-#' @aliases runU,HyperbolicAnalysis-method
+#' Run the uptake nonlinear hyperbolic saturating kinetic analysis
+#'
+#' @aliases runU.HyperbolicAnalysis
+#' @exportMethod runU
 
 setMethod(
    f = "runU",
@@ -256,8 +256,6 @@ setMethod(
 
 #' Method runVf
 #' 
-#' @name runVf
-#' @rdname runVf-methods
 #' @exportMethod runVf
 
 setGeneric(
@@ -265,8 +263,10 @@ setGeneric(
    def = function(analysis) { standardGeneric("runVf") }
    );
 
-#' @rdname runVf-methods
-#' @aliases runVf,HyperbolicAnalysis-method
+#' Run the uptake velocity hyperbolic saturating kinetic analysis
+#'
+#' @aliases runVf.HyperbolicAnalysis
+#' @exportMethod runVf
 
 setMethod(
    f = "runVf",
@@ -298,15 +298,14 @@ setMethod(
 
 #' Method plot
 #' 
-#' @name plot
-#' @rdname plot-methods
 #' @exportMethod plot
 
 setGeneric(name = "plot");
 
-#' @rdname plot-methods
-#' @aliases plot,HyperbolicAnalysis-method
-#' @details Plots the results from all inference methods
+#' Plot a basic visualization of the analyses
+#'
+#' @aliases plot.HyperbolicAnalysis
+#' @exportMethod plot
 
 setMethod(
    f = "plot",
@@ -375,8 +374,6 @@ setMethod(
 
 #' Method plotVf
 #' 
-#' @name plotVf
-#' @rdname plotVf-methods
 #' @exportMethod plotVf
 
 setGeneric(
@@ -384,8 +381,10 @@ setGeneric(
    def = function(analysis, ...) { standardGeneric("plotVf") }
    );
 
-#' @rdname plotVf-methods
-#' @aliases plotVf,HyperbolicAnalysis-method
+#' Plot the uptake velocity analysis
+#'
+#' @aliases plotVf.HyperbolicAnalysis
+#' @exportMethod plotVf
 
 setMethod(
    f = "plotVf",
@@ -415,8 +414,6 @@ setMethod(
 
 #' Method linesVfModel
 #' 
-#' @name linesVfModel
-#' @rdname linesVfModel-methods
 #' @exportMethod linesVfModel
 
 setGeneric(
@@ -424,8 +421,10 @@ setGeneric(
    def = function(analysis, ...) { standardGeneric("linesVfModel") }
    );
 
-#' @rdname linesVfModel-methods
-#' @aliases linesVfModel,HyperbolicAnalysis-method
+#' Plot lines for the uptake velocity model
+#'
+#' @aliases linesVfModel.HyperbolicAnalysis
+#' @exportMethod linesVfModel
 
 setMethod(
    f = "linesVfModel",
@@ -451,12 +450,122 @@ setMethod(
       }
    );
 
+# HyperbolicAnalysis.plotIneff method ####
+
+#' Method plotIneff
+#' 
+#' @exportMethod plotIneff
+
+setGeneric(
+   name = "plotIneff",
+   def = function(analysis, ...) { standardGeneric("plotIneff") }
+   );
+
+#' Plot the inefficiency analysis
+#'
+#' @aliases plotIneff
+#' @exportMethod plotIneff
+
+setMethod(
+   f = "plotIneff",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      xlim = c(
+         min(analysis$metrics$cefftot),
+         max(analysis$metrics$cefftot)
+         ),
+      ylim = c(
+         min(1 / analysis$metrics$vf),
+         max(1 / analysis$metrics$vf, analysis$vfEstimates$intercept)
+         ),
+      xlab = "Effective concentration",
+      ylab = bquote(paste(v[f])),
+      pch = 16,
+      col = "black",
+      actual = TRUE,
+      actual.col = "red",
+      actual.lty = "dashed",
+      ...
+      ) 
+      {
+         ineff <- 1 / analysis$metrics$vf;
+         plot(
+            x = analysis$metrics$cefftot, 
+            y = ineff, 
+            xlim = xlim,
+            ylim = ylim,
+            xlab = xlab,
+            ylab = ylab,
+            pch = pch,
+            col = col,
+            ...
+            );
+         linesIneffModel(analysis);
+         if (actual) {
+            linesIneffModel(
+               analysis = analysis, 
+               xlim = xlim,
+               intercept = analysis$experiment$vfInterceptActual,
+               slope = analysis$experiment$vfSlopeActual,
+               col = actual.col,
+               lty = actual.lty
+               );
+         }
+      }
+   );
+
+# HyperbolicAnalysis.linesIneffModel method ####
+
+#' Method linesIneffModel
+#' 
+#' @exportMethod linesIneffModel
+
+setGeneric(
+   name = "linesIneffModel",
+   def = function(analysis, ...) { standardGeneric("linesIneffModel") }
+   );
+
+#' Plot lines for the uptake velocity model
+#'
+#' @aliases linesIneffModel.HyperbolicAnalysis
+#' @exportMethod linesIneffModel
+
+setMethod(
+   f = "linesIneffModel",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      xlim = c(
+         0,
+         max(analysis$metrics$cefftot)
+         ),
+      grain = 30,
+      intercept = analysis$vfEstimates$intercept,
+      slope = analysis$vfEstimates$slope,
+      col = "black",
+      ...
+      ) 
+      {
+         xvals <- seq(
+            from = xlim[1],
+            to = xlim[2],
+            length.out = grain
+            )
+         ineffModel <- intercept + slope * xvals; 
+         lines(
+            x = xvals,
+            y = ineffModel,
+            col = col,
+            ...
+            );
+      }
+   );
+
 # HyperbolicAnalysis.plotU method ####
 
 #' Method plotU
 #' 
-#' @name plotU
-#' @rdname plotU-methods
 #' @exportMethod plotU
 
 setGeneric(
@@ -464,8 +573,10 @@ setGeneric(
    def = function(analysis, ...) { standardGeneric("plotU") }
    );
 
-#' @rdname plotU-methods
-#' @aliases plotU,HyperbolicAnalysis-method
+#' Plot the uptake nonlinear analysis
+#'
+#' @aliases plotU.HyperbolicAnalysis
+#' @exportMethod plotU
 
 setMethod(
    f = "plotU",
@@ -495,8 +606,6 @@ setMethod(
 
 #' Method linesUModel
 #' 
-#' @name linesUModel
-#' @rdname linesUModel-methods
 #' @exportMethod linesUModel
 
 setGeneric(
@@ -504,8 +613,10 @@ setGeneric(
    def = function(analysis, ...) { standardGeneric("linesUModel") }
    );
 
-#' @rdname linesUModel-methods
-#' @aliases linesUModel,HyperbolicAnalysis-method
+#' Plot the line for an uptake kinetic model
+#'
+#' @aliases linesUModel.HyperbolicAnalysis
+#' @exportMethod linesUModel
 
 setMethod(
    f = "linesUModel",
@@ -538,8 +649,6 @@ setMethod(
 
 #' Method plotSw
 #' 
-#' @name plotSw
-#' @rdname plotSw-methods
 #' @exportMethod plotSw
 
 setGeneric(
@@ -547,8 +656,10 @@ setGeneric(
    def = function(analysis, ...) { standardGeneric("plotSw") }
    );
 
-#' @rdname plotSw-methods
-#' @aliases plotSw,HyperbolicAnalysis-method
+#' Plot the uptake length analysis
+#'
+#' @aliases plotSw.HyperbolicAnalysis
+#' @exportMethod plotSw
 
 setMethod(
    f = "plotSw",
@@ -578,8 +689,6 @@ setMethod(
 
 #' Method linesSwModel
 #' 
-#' @name linesSwModel
-#' @rdname linesSwModel-methods
 #' @exportMethod linesSwModel
 
 setGeneric(
@@ -587,8 +696,10 @@ setGeneric(
    def = function(analysis, ...) { standardGeneric("linesSwModel") }
    );
 
-#' @rdname linesSwModel-methods
-#' @aliases linesSwModel,HyperbolicAnalysis-method
+#' Plot the line for the uptake length kintic model
+#'
+#' @aliases linesSwModel.HyperbolicAnalysis
+#' @exportMethod linesSwModel
 
 setMethod(
    f = "linesSwModel",
@@ -620,8 +731,6 @@ setMethod(
 #' kinetic behavior based on multilevel constant rate (MCR) 
 #' solute uptake experiments
 #' 
-#' @name HyperbolicAnalysisMCR-class
-#' @rdname HyperbolicAnalysisMCR-class
 #' @export HyperbolicAnalysisMCR
 #' @exportClass HyperbolicAnalysisMCR
 
@@ -630,9 +739,11 @@ HyperbolicAnalysisMCR <- setClass(
    contains = "HyperbolicAnalysis"
    );
 
-#' Constructor method for HyperbolicAnalysisMCR class.
+#' Constructor method for HyperbolicAnalysis class.
 #' 
 #' @rdname HyperbolicAnalysisMCR-class
+#' @return The object of class \code{HyperbolicAnalysisMCR} created
+#'      by the constructor
 
 setMethod(
    f = "initialize",
@@ -652,9 +763,10 @@ setMethod(
          indices <- analysisWindow / simulation$outputTimeStep + 1;
          
          if (!(isSingleColumn || useRegression)) {
-            time <- numeric(length = length(analysisWindow) * numColumns)
+            time <- rep(analysisWindow, times = numColumns);
+         } else {
+            time <- analysisWindow;
          }
-         time <- analysisWindow;
          
          analysis <- callNextMethod(
             .Object,
@@ -665,14 +777,18 @@ setMethod(
 
          if (isSingleColumn || useRegression)
          {
-            
+            if (useRegression)
+            {
+               consIndex <- conserveColumn[length(conserveColumn)];
+               actIndex <- activeColumn[length(activeColumn)];
+            }
             conserve <- simulation$conserveSolute[
                indices,
-               conserveColumn
+               consIndex
                ];
             active <- simulation$activeSolute[
                indices,
-               activeColumn
+               actIndex
                ];
             
          } else {
@@ -782,8 +898,6 @@ setMethod(
 #' kinetic behavior based on instantaneous release (slug) 
 #' solute uptake experiments
 #' 
-#' @name HyperbolicAnalysisSlug-class
-#' @rdname HyperbolicAnalysisSlug-class
 #' @export HyperbolicAnalysisSlug
 #' @exportClass HyperbolicAnalysisSlug
 
@@ -795,7 +909,8 @@ HyperbolicAnalysisSlug <- setClass(
 #' Constructor method for HyperbolicAnalysisSlug class.
 #' 
 #' @rdname HyperbolicAnalysisSlug-class
-#' 
+#' @return The object of class \code{HyperbolicAnalysisSlug} created
+#'      by the constructor
 
 setMethod(
    f = "initialize",
@@ -851,8 +966,6 @@ setMethod(
 #' solute uptake experiments and a TASCC analysis 
 #' (Covino et al. 2010, Limn. and Ocean.: Methods)
 #' 
-#' @name HyperbolicAnalysisTASCC-class
-#' @rdname HyperbolicAnalysisTASCC-class
 #' @export HyperbolicAnalysisTASCC
 #' @exportClass HyperbolicAnalysisTASCC
 
@@ -864,7 +977,8 @@ HyperbolicAnalysisTASCC <- setClass(
 #' Constructor method for HyperbolicAnalysisTASCC class.
 #' 
 #' @rdname HyperbolicAnalysisTASCC-class
-#' 
+#' @return The object of class \code{HyperbolicAnalysisTASCC} created
+#'      by the constructor
 
 setMethod(
    f = "initialize",
@@ -912,8 +1026,6 @@ setMethod(
 #' kinetic behavior based on instantaneous release (slug) 
 #' solute uptake experiments and a lagrangian adaptation of a TASCC analysis 
 #' 
-#' @name HyperbolicAnalysisTASCCLagrange-class
-#' @rdname HyperbolicAnalysisTASCCLagrange-class
 #' @export HyperbolicAnalysisTASCCLagrange
 #' @exportClass HyperbolicAnalysisTASCCLagrange
 
@@ -928,6 +1040,8 @@ HyperbolicAnalysisTASCCLagrange <- setClass(
 #' Constructor method for HyperbolicAnalysisTASCCLagrange class.
 #' 
 #' @rdname HyperbolicAnalysisTASCCLagrange-class
+#' @return The object of class \code{HyperbolicAnalysisTASCCLagrange} created
+#'      by the constructor
 
 setMethod(
    f = "initialize",
