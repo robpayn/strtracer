@@ -111,18 +111,16 @@ Simulation <- function(
 
    simulation$vfambactual <- 
       simulation$uambactual / simulation$activeBkg;
-   vfSlopeActual <- (simulation$discharge * (simulation$halfsat + simulation$activeBkg)) /
-      (simulation$streamWidth * simulation$umax * simulation$halfsat);
-   simulation$vfInterceptActual = (1 / (simulation$streamDepth * simulation$streamVel)) *
-      (((simulation$discharge * (simulation$halfsat + simulation$activeBkg)^2) /
-      (simulation$streamWidth * simulation$umax * simulation$halfsat)) +
-      vfSlopeActual * -simulation$activeBkg);
-   simulation$vfSlopeActual = (1 / 
-      (simulation$streamDepth * simulation$streamVel) ) *
-      vfSlopeActual;
+   simulation$ineffInterceptActual = (simulation$halfsat + simulation$activeBkg) /
+         simulation$umax;
+   simulation$ineffSlopeActual = (simulation$halfsat + simulation$activeBkg) /
+         (simulation$umax * simulation$halfsat);
 
    simulation$kambactual <- 
-      simulation$streamDepth / simulation$vfambactual;
+      simulation$vfambactual / simulation$streamDepth;
+   simulation$tauAmbActual <- 1 / simulation$kambactual;
+   simulation$tauSlopeActual <- simulation$streamDepth * 
+      simulation$ineffSlopeActual;
 
    simulation$swambactual <- 
       (simulation$discharge * simulation$activeBkg) /
@@ -136,6 +134,7 @@ Simulation <- function(
    class(simulation) <- c("Simulation", class(simulation));
    return(simulation);
 }
+
 
 # CLASS SimulationSlug ####
 

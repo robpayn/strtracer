@@ -124,6 +124,7 @@ setMethod(
          runSw(analysis, ...);
          runU(analysis, ...);
          runVf(analysis, ...);
+         runTau(analysis, ...);
       }
    );
 
@@ -294,6 +295,48 @@ setMethod(
       }
    );
 
+# HyperbolicAnalysis.runTau method ####
+
+#' Method runTau
+#' 
+#' @exportMethod runTau
+
+setGeneric(
+   name = "runTau",
+   def = function(analysis) { standardGeneric("runTau") }
+   );
+
+#' Run the reaction time hyperbolic saturating kinetic analysis
+#'
+#' @aliases runTau.HyperbolicAnalysis
+#' @exportMethod runTau
+
+setMethod(
+   f = "runTau",
+   signature = "HyperbolicAnalysis",
+   definition = function(analysis) 
+      {
+         tau <- 1 / analysis$metrics$k;
+         lmresults <- lm(
+            tau ~ cefftot,
+            data = analysis$metrics
+         );
+         tauAmb = as.numeric(lmresults$coefficients["(Intercept)"]);
+         slope = as.numeric(lmresults$coefficients["cefftot"]);
+         halfsat = tauAmb / slope;
+         analysis$tauEstimates = list(
+            intercept = tauAmb,
+            slope = slope,
+            tauAmb = tauAmb,
+            umax = analysis$experiment$streamDepth * 
+               (halfsat + analysis$experiment$activeBkg) / tauAmb,
+            halfsat = halfsat,
+            uamb = (analysis$experiment$streamDepth * analysis$experiment$activeBkg) / 
+               tauAmb
+         );
+      }
+   );
+
 # HyperbolicAnalysis.plot method ####
 
 #' Method plot
@@ -318,6 +361,7 @@ setMethod(
       vf.ylab = bquote(paste(v[f])),
       u.ylab = "U",
       sw.ylab = bquote(paste(s[w])),
+      tau.ylab = bquote(paste(tau[NET])),
       actual = TRUE,
       actual.col = "red",
       actual.lty = "dashed",
@@ -327,15 +371,15 @@ setMethod(
          par(
             mar = c(2, 4.5, 1, 1),
             oma = c(2, 0, 0, 0),
-            mfrow = c(3, 1),
+            mfrow = c(2, 2),
             ...
             );
          plotVf(analysis = x, xlab = "", ylab = vf.ylab);
          if (actual) {
             linesVfModel(
                analysis = x, 
-               intercept = analysis$experiment$vfInterceptActual,
-               slope = analysis$experiment$vfSlopeActual,
+               intercept = analysis$experiment$ineffInterceptActual,
+               slope = analysis$experiment$ineffSlopeActual,
                col = actual.col,
                lty = actual.lty
                );
@@ -360,6 +404,7 @@ setMethod(
                lty = actual.lty
                );
          }
+         plotTau(analysis = x, xlab = "", ylab = tau.ylab, pch = 1);
          mtext(
             xlab,
             side = 1,
@@ -556,6 +601,112 @@ setMethod(
          lines(
             x = xvals,
             y = ineffModel,
+            col = col,
+            ...
+            );
+      }
+   );
+
+# HyperbolicAnalysis.plotTau method ####
+
+#' Method plotTau
+#' 
+#' @exportMethod plotTau
+
+setGeneric(
+   name = "plotTau",
+   def = function(analysis, ...) { standardGeneric("plotTau") }
+   );
+
+#' Plot the tau analysis
+#'
+#' @aliases plotTau
+#' @exportMethod plotTau
+
+setMethod(
+   f = "plotTau",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      xlim = c(
+         min(analysis$metrics$cefftot),
+         max(analysis$metrics$cefftot)
+         ),
+      ylim = c(
+         min(1 / analysis$metrics$k, analysis$tauEstimates$intercept),
+         max(1 / analysis$metrics$k)
+         ),
+      xlab = "Effective concentration",
+      ylab = bquote(paste("\tau")),
+      pch = 16,
+      col = "black",
+      actual = TRUE,
+      actual.col = "red",
+      actual.lty = "dashed",
+      ...
+      ) 
+      {
+         tauNet <- 1 / analysis$metrics$k;
+         plot(
+            x = analysis$metrics$cefftot, 
+            y = tauNet, 
+            xlim = xlim,
+            ylim = ylim,
+            xlab = xlab,
+            ylab = ylab,
+            pch = pch,
+            col = col,
+            ...
+            );
+         linesTauModel(analysis);
+         if (actual) {
+            linesTauModel(
+               analysis = analysis, 
+               xlim = xlim,
+               intercept = analysis$experiment$tauAmbActual,
+               slope = analysis$experiment$tauSlopeActual,
+               col = actual.col,
+               lty = actual.lty
+               );
+         }
+      }   
+   );
+
+# HyperbolicAnalysis.linesTauModel method ####
+
+#' Method linesTauModel
+#' 
+#' @exportMethod linesTauModel
+
+setGeneric(
+   name = "linesTauModel",
+   def = function(analysis, ...) { standardGeneric("linesTauModel") }
+   );
+
+#' Plot lines for the uptake velocity model
+#'
+#' @aliases linesTauModel.HyperbolicAnalysis
+#' @exportMethod linesTauModel
+
+setMethod(
+   f = "linesTauModel",
+   signature = "HyperbolicAnalysis",
+   definition = function(
+      analysis,
+      xlim = c(
+         0,
+         max(analysis$metrics$cefftot)
+         ),
+      intercept = analysis$tauEstimates$intercept,
+      slope = analysis$tauEstimates$slope,
+      col = "black",
+      ...
+      ) 
+      {
+         tauModel <- intercept + slope * xlim; 
+         lines(
+            x = xlim,
+            y = tauModel,
             col = col,
             ...
             );
@@ -1059,18 +1210,27 @@ setMethod(
             analysisWindow = analysisWindow,
             ...
             );
-         
+            analysis$upstream <- data.frame(
+               time = numeric(length(analysis$metrics$time)),
+               activebc = numeric(length(analysis$metrics$time)),
+               conservebc = numeric(length(analysis$metrics$time))
+               );
+            
          for (i in 1:length(analysis$metrics$time))
          {
             activebc <- 
                simulation$paths[[i]]$active - simulation$activeBkg;
             conservebc <- 
                simulation$paths[[i]]$conserve - simulation$conserveBkg;
-            logy <- log(activebc / conservebc);
-            x <- simulation$paths[[i]]$time;
-            lmresults <- lm(logy ~ x);
-            analysis$metrics$k[i] <- -lmresults$coefficients["x"];
-            analysis$metrics$ceffinject[i] <- exp(mean(log(activebc)));
+            analysis$upstream$time <- simulation$paths[[i]]$time[1];
+            analysis$upstream$activebc[i] <- activebc[1];
+            analysis$upstream$conservebc[i] <- conservebc[1];
+            analysis$metrics$k[i] <- 
+               (log(analysis$upstream$activebc[i] / analysis$upstream$conservebc[i])
+               - log(analysis$metrics$activebc[i] / analysis$metrics$conservebc[i])) /
+                  (analysis$metrics$time[i] - analysis$upstream$time[i]);
+            analysis$metrics$ceffinject[i] <- 
+               (analysis$upstream$activebc[i] * analysis$metrics$activebc[i])^0.5;
          }
          
          calcMetrics(analysis);
