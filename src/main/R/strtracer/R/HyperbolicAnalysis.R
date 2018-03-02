@@ -54,6 +54,7 @@ setMethod(
             conservebc = numeric(metricsLength),
             activebc = numeric(metricsLength),
             activenr = numeric(metricsLength),
+            travelTime = numeric(metricsLength),
             ceffinject = numeric(metricsLength),
             cefftot = numeric(metricsLength),
             k = numeric(metricsLength),
@@ -968,14 +969,16 @@ setMethod(
          
          if (isSingleColumn) {
             
+            analysis$metrics$travelTime <- simulation$travelTime;
             ceffinject <- sqrt(activebc * activenr);
             
             k <- ( log(simulation$injectRatio)
                - (log(activebc / conservebc)) ) /
-               simulation$travelTime
+               analysis$metrics$travelTime
             
          } else if (useRegression) {
             
+            analysis$metrics$travelTime <- simulation$travelTime;
             curvesactive <- as.matrix(
                simulation$activeSolute[indices, activeColumn] - 
                   simulation$activeBkg
@@ -1010,14 +1013,25 @@ setMethod(
             
             prevIndices <- 1:numColumns;
             
+            travelTime <- rep(
+               reachLengths[1] / simulation$streamVel, 
+               times = numColumns
+               );
             ceffinject <- sqrt(activebc[prevIndices] * activenr[prevIndices]);
             k <- ( log(simulation$injectRatio)
                - (log(activebc[prevIndices] / conservebc[prevIndices])) ) /
-               (reachLengths[1] / simulation$streamVel)
+               travelTime
             
             for (i in 1:(numColumns - 1)) {
                nextIndices <- (i * numColumns + 1):((i + 1) * numColumns);
                
+               travelTime <- c(
+                  travelTime,
+                  rep(
+                     reachLengths[i + 1] / simulation$streamVel, 
+                     times = numColumns
+                     )
+                  );
                ceffinject <- c(
                   ceffinject,
                   sqrt(activebc[nextIndices] * activebc[prevIndices])
@@ -1027,10 +1041,12 @@ setMethod(
                   k,
                   ( (log(activebc[prevIndices] / conservebc[prevIndices]))
                      - (log(activebc[nextIndices] / conservebc[nextIndices])) ) /
-                     (reachLengths[i + 1] / simulation$streamVel)
+                     (travelTime[nextIndices])
                   );
                prevIndices <- nextIndices;
             }
+            analysis$metrics$travelTime <- travelTime;
+            
          }
          analysis$metrics$ceffinject <- ceffinject;
          analysis$metrics$k <- k;
@@ -1148,12 +1164,14 @@ setMethod(
             ...
             );
          
+         analysis$metrics$travelTime <- 
+            analysis$metrics$time - analysis$releaseTime;
          analysis$metrics$ceffinject <-
             sqrt(analysis$metrics$activebc * analysis$metrics$activenr);
          analysis$metrics$k <- 
             ( log(simulation$injectRatio) 
                - log(analysis$metrics$activebc / analysis$metrics$conservebc) ) /
-               (analysis$metrics$time - analysis$releaseTime);
+               (analysis$metrics$travelTime);
          
          length <- length(analysis$metrics$time);
          analysis$metricsOriginal <- data.frame(
@@ -1210,11 +1228,11 @@ setMethod(
             analysisWindow = analysisWindow,
             ...
             );
-            analysis$upstream <- data.frame(
-               time = numeric(length(analysis$metrics$time)),
-               activebc = numeric(length(analysis$metrics$time)),
-               conservebc = numeric(length(analysis$metrics$time))
-               );
+         analysis$upstream <- data.frame(
+            time = numeric(length(analysis$metrics$time)),
+            activebc = numeric(length(analysis$metrics$time)),
+            conservebc = numeric(length(analysis$metrics$time))
+            );
             
          for (i in 1:length(analysis$metrics$time))
          {
@@ -1222,16 +1240,18 @@ setMethod(
                simulation$paths[[i]]$active - simulation$activeBkg;
             conservebc <- 
                simulation$paths[[i]]$conserve - simulation$conserveBkg;
-            analysis$upstream$time <- simulation$paths[[i]]$time[1];
+            analysis$upstream$time[i] <- simulation$paths[[i]]$time[1];
             analysis$upstream$activebc[i] <- activebc[1];
             analysis$upstream$conservebc[i] <- conservebc[1];
-            analysis$metrics$k[i] <- 
-               (log(analysis$upstream$activebc[i] / analysis$upstream$conservebc[i])
-               - log(analysis$metrics$activebc[i] / analysis$metrics$conservebc[i])) /
-                  (analysis$metrics$time[i] - analysis$upstream$time[i]);
-            analysis$metrics$ceffinject[i] <- 
-               (analysis$upstream$activebc[i] * analysis$metrics$activebc[i])^0.5;
          }
+         analysis$metrics$travelTime <- 
+            analysis$metrics$time - analysis$upstream$time;
+         analysis$metrics$k <- 
+            (log(analysis$upstream$activebc / analysis$upstream$conservebc)
+            - log(analysis$metrics$activebc / analysis$metrics$conservebc)) /
+               (analysis$metrics$travelTime);
+         analysis$metrics$ceffinject <- 
+            (analysis$upstream$activebc * analysis$metrics$activebc)^0.5;
          
          calcMetrics(analysis);
          
